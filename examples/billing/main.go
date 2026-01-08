@@ -2,22 +2,27 @@ package main
 
 import (
 	"context"
-	"github.com/AbacatePay/abacatepay-go-sdk/abacatepay"
-	"github.com/AbacatePay/abacatepay-go-sdk/v1/billing"
 	"log"
 	"time"
+
+	"github.com/AbacatePay/abacatepay-go-sdk/abacatepay"
+	"github.com/AbacatePay/abacatepay-go-sdk/v1/billing"
 )
 
 func main() {
-	client, err := abacatepay.New(&abacatepay.ClientConfig{
-		ApiKey:  "abc_dev",
+	client, err := abacatepay.New(abacatepay.ClientConfig{
+		APIKey:  "abc_dev",
 		Timeout: 10 * time.Second,
 	})
+	
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	//create a new billing
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+
+	defer cancel()
+
 	body := &billing.CreateBillingBody{
 		Frequency:     billing.OneTime,
 		Methods:       []billing.Method{billing.PIX},
@@ -37,19 +42,19 @@ func main() {
 		},
 	}
 
-	ctx := context.Background()
-	createResponse, err := client.Billing.Create(ctx, body)
+	createResp, err := client.Billing.Create(ctx, body)
+	
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	log.Println(createResponse)
+	log.Printf("billing created: %s\n", createResp.Data.PublicID)
 
-	// list all billings
-	billings, err := client.Billing.ListAll(ctx)
+	listResp, err := client.Billing.ListAll(ctx)
+
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	log.Println(billings.Data)
+	log.Printf("total billings: %d\n", len(listResp.Data))
 }

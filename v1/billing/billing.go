@@ -29,33 +29,33 @@ func (b *Billing) Create(
 		return nil, fmt.Errorf("customerId or customer.email is required")
 	}
 
-	var response CreateBillingResponse
-
 	resp, err := b.HttpClient.Post(ctx, "/v1/billing/create", body)
+
 	if err != nil {
 		return nil, err
 	}
 
-	err = fetch.ParseResponse(resp, &response)
+	response, err := fetch.ParseResponse[CreateBillingResponse](resp)
+
 	if err != nil {
 		return nil, err
 	}
 
-	return &response, nil
+	return response, nil
 }
 
 func (b *Billing) ListAll(ctx context.Context) (*ListBillingResponse, error) {
-	var response ListBillingResponse
-
 	resp, err := b.HttpClient.Get(ctx, "/v1/billing/list")
+
 	if err != nil {
 		return nil, err
 	}
 
-	err = fetch.ParseResponse(resp, &response)
+	response, err := fetch.ParseResponse[ListBillingResponse](resp)
+
 	if err != nil {
 		return nil, err
 	}
 
-	return &response, nil
+	return response, nil
 }

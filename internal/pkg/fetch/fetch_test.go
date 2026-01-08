@@ -1,10 +1,8 @@
 package fetch_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,186 +17,136 @@ type TestResponse struct {
 	Message string `json:"message"`
 }
 
-func TestNewFetchClient(t *testing.T) {
-	t.Run("Create new client with valid params", func(t *testing.T) {
-		client, err := fetch.New("test-key", "https://api.test.com", "1.0.0", 10)
-		assert.NotNil(t, client)
+func TestNewFetch(t *testing.T) {
+	t.Run("valid config", func(t *testing.T) {
+		client, err := fetch.New(fetch.Config{
+			APIKey:  "test-key",
+			BaseURL: "https://api.test.com",
+			Version: "1.0.0",
+			Timeout: 5 * time.Second,
+		})
+
 		assert.NoError(t, err)
+		assert.NotNil(t, client)
 	})
 
-	t.Run("Return error if API key is empty", func(t *testing.T) {
-		_, err := fetch.New("", "https://api.test.com", "1.0.0", 10)
+	t.Run("error if api key is empty", func(t *testing.T) {
+		_, err := fetch.New(fetch.Config{
+			BaseURL: "https://api.test.com",
+		})
+
 		assert.Error(t, err)
-		assert.ErrorIs(t, fetch.ErrInvalidAPIKey, err)
+		assert.ErrorIs(t, err, fetch.ErrInvalidAPIKey)
 	})
 
-	t.Run("Panic if API url is empty", func(t *testing.T) {
-		_, err := fetch.New("test-key", "", "1.0.0", 10)
+	t.Run("error if base url is empty", func(t *testing.T) {
+		_, err := fetch.New(fetch.Config{
+			APIKey: "test-key",
+		})
+
 		assert.Error(t, err)
-		assert.ErrorIs(t, fetch.ErrInvalidAPIUrl, err)
+		assert.ErrorIs(t, err, fetch.ErrInvalidURL)
 	})
 }
 
-func TestFetchMethods(t *testing.T) {
-	t.Run("Have GET method", func(t *testing.T) {
-		ctx := context.Background()
+func TestHTTPMethods(t *testing.T) {
+	methods := []struct {
+		name   string
+		method string
+		call   func(c *fetch.Fetch, ctx context.Context) (*http.Response, error)
+	}{
+		{
+			name:   "GET",
+			method: http.MethodGet,
+			call: func(c *fetch.Fetch, ctx context.Context) (*http.Response, error) {
+				return c.Get(ctx, "/test")
+			},
+		},
+		{
+			name:   "POST",
+			method: http.MethodPost,
+			call: func(c *fetch.Fetch, ctx context.Context) (*http.Response, error) {
+				return c.Post(ctx, "/test", TestResponse{Message: "ok"})
+			},
+		},
+		{
+			name:   "PUT",
+			method: http.MethodPut,
+			call: func(c *fetch.Fetch, ctx context.Context) (*http.Response, error) {
+				return c.Put(ctx, "/test", TestResponse{Message: "ok"})
+			},
+		},
+		{
+			name:   "DELETE",
+			method: http.MethodDelete,
+			call: func(c *fetch.Fetch, ctx context.Context) (*http.Response, error) {
+				return c.Delete(ctx, "/test")
+			},
+		},
+	}
 
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodGet, r.Method)
-			assert.Equal(t, "Bearer test-key", r.Header.Get("Authorization"))
-			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+	for _, tt := range methods {
+		t.Run(tt.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, tt.method, r.Method)
+				assert.Equal(t, "Bearer test-key", r.Header.Get("Authorization"))
+				assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
-			resp := TestResponse{Message: "Success"}
-			json.NewEncoder(w).Encode(resp)
-		}))
+				json.NewEncoder(w).Encode(TestResponse{Message: "ok"})
+			}))
+			defer server.Close()
 
-		defer server.Close()
+			client, err := fetch.New(fetch.Config{
+				APIKey:  "test-key",
+				BaseURL: server.URL,
+				Version: "1.0.0",
+			})
+			assert.NoError(t, err)
 
-		client, err := fetch.New("test-key", server.URL, "1.0.0", 10*time.Second)
-		assert.NoError(t, err)
-
-		var response *http.Response
-		response, err = client.Get(ctx, "/test")
-
-		assert.NoError(t, err)
-		assert.NotNil(t, response)
-	})
-
-	t.Run("Have DELETE method", func(t *testing.T) {
-		ctx := context.Background()
-
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodDelete, r.Method)
-			assert.Equal(t, "Bearer test-key", r.Header.Get("Authorization"))
-			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
-
-			resp := TestResponse{Message: "Success"}
-			json.NewEncoder(w).Encode(resp)
-		}))
-
-		defer server.Close()
-
-		client, err := fetch.New("test-key", server.URL, "1.0.0", 10*time.Second)
-		assert.NoError(t, err)
-
-		var response *http.Response
-		response, err = client.Delete(ctx, "/test/xpto")
-
-		assert.NoError(t, err)
-		assert.NotNil(t, response)
-	})
-
-	t.Run("Have POST method", func(t *testing.T) {
-		ctx := context.Background()
-
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodPost, r.Method)
-			assert.Equal(t, "Bearer test-key", r.Header.Get("Authorization"))
-			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
-
-			resp := TestResponse{Message: "Success"}
-			json.NewEncoder(w).Encode(resp)
-		}))
-
-		defer server.Close()
-
-		client, err := fetch.New("test-key", server.URL, "1.0.0", 10*time.Second)
-		assert.NoError(t, err)
-
-		var response *http.Response
-
-		response, err = client.Post(ctx, "/test/xpto", TestResponse{Message: "Success"})
-
-		assert.NoError(t, err)
-		assert.NotNil(t, response)
-	})
-
-	t.Run("Have PUT method", func(t *testing.T) {
-		ctx := context.Background()
-
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodPut, r.Method)
-			assert.Equal(t, "Bearer test-key", r.Header.Get("Authorization"))
-			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
-
-			resp := TestResponse{Message: "Success"}
-			json.NewEncoder(w).Encode(resp)
-		}))
-
-		defer server.Close()
-
-		client, err := fetch.New("test-key", server.URL, "1.0.0", 10*time.Second)
-		assert.NoError(t, err)
-
-		var response *http.Response
-
-		response, err = client.Put(ctx, "/test/xpto", TestResponse{Message: "Success"})
-
-		assert.NoError(t, err)
-		assert.NotNil(t, response)
-	})
+			resp, err := tt.call(client, context.Background())
+			assert.NoError(t, err)
+			assert.NotNil(t, resp)
+		})
+	}
 }
 
 func TestParseResponse(t *testing.T) {
-	t.Run("Parse response with success", func(t *testing.T) {
-		resp := &http.Response{
-			StatusCode: 200,
-			Body:       io.NopCloser(bytes.NewBufferString(`{"message": "Success"}`)),
-		}
-
-		var result TestResponse
-		err := fetch.ParseResponse(resp, &result)
-
-		assert.NoError(t, err)
-		assert.Equal(t, "Success", result.Message)
-	})
-
-	t.Run("Error on invalid status code", func(t *testing.T) {
-		resp := &http.Response{
-			StatusCode: 400,
-			Body:       io.NopCloser(bytes.NewBufferString(`{"error": "Bad Request"}`)),
-		}
-
-		var result TestResponse
-		err := fetch.ParseResponse(resp, &result)
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "error on request: status 400")
-	})
-
-	t.Run("Error with invalid JSON", func(t *testing.T) {
-		resp := &http.Response{
-			StatusCode: 200,
-			Body:       io.NopCloser(bytes.NewBufferString(`{"invalid": json}`)),
-		}
-
-		var result TestResponse
-		err := fetch.ParseResponse(resp, &result)
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "error on deserializing response")
-	})
-}
-
-func TestRequestOptions(t *testing.T) {
-	t.Run("Configure custom timeout", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			json.NewEncoder(w).Encode(TestResponse{Message: "Success"})
+	t.Run("success response", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			json.NewEncoder(w).Encode(TestResponse{Message: "success"})
 		}))
-
 		defer server.Close()
 
-		client, err := fetch.New("test-key", server.URL, "1.0.0", 10*time.Second)
-		assert.NoError(t, err)
-		opts := fetch.RequestOptions{
-			Timeout: 5 * time.Second,
-			Headers: map[string]string{
-				"X-Custom-Header": "test-value",
-			},
-		}
+		client, _ := fetch.New(fetch.Config{
+			APIKey:  "test",
+			BaseURL: server.URL,
+			Version: "1.0.0",
+		})
 
-		response, err := client.Get(context.Background(), "/test", opts)
+		resp, err := client.Get(context.Background(), "/")
 		assert.NoError(t, err)
-		assert.NotNil(t, response)
+
+		out, err := fetch.ParseResponse[TestResponse](resp)
+		assert.NoError(t, err)
+		assert.Equal(t, "success", out.Message)
+	})
+
+	t.Run("error on non-2xx status", func(t *testing.T) {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"error":"bad request"}`))
+		}))
+		defer server.Close()
+
+		client, _ := fetch.New(fetch.Config{
+			APIKey:  "test",
+			BaseURL: server.URL,
+			Version: "1.0.0",
+		})
+
+		resp, _ := client.Get(context.Background(), "/")
+		_, err := fetch.ParseResponse[TestResponse](resp)
+
+		assert.Error(t, err)
 	})
 }

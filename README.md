@@ -1,34 +1,44 @@
 # abacatepay-go-sdk
 
+Official Go SDK for the AbacatePay API.
+
+---
+
 ## Installation
 
 ```bash
 go get github.com/AbacatePay/abacatepay-go-sdk
 ```
 
-## Usage
+## Quick start
 
 ```go
 package main
 
 import (
 	"context"
-	"github.com/AbacatePay/abacatepay-go-sdk/abacatepay"
-	"github.com/AbacatePay/abacatepay-go-sdk/v1/billing"
 	"log"
 	"time"
+
+	"github.com/AbacatePay/abacatepay-go-sdk/abacatepay"
+	"github.com/AbacatePay/abacatepay-go-sdk/v1/billing"
 )
 
 func main() {
-	client, err := abacatepay.New(&abacatepay.ClientConfig{
-		ApiKey:  "abc_dev",
+	client, err := abacatepay.New(abacatepay.ClientConfig{
+		APIKey:  "abc_dev",
 		Timeout: 10 * time.Second,
 	})
+
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	//create a new billing
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+
+	defer cancel()
+
+	// Create a new billing
 	body := &billing.CreateBillingBody{
 		Frequency:     billing.OneTime,
 		Methods:       []billing.Method{billing.PIX},
@@ -48,28 +58,42 @@ func main() {
 		},
 	}
 
-	ctx := context.Background()
-	createResponse, err := client.Billing.Create(ctx, body)
+	createResp, err := client.Billing.Create(ctx, body)
+
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 
-	log.Println(createResponse)
-
-	// list all billings
-	billings, err := client.Billing.ListAll(ctx)
-	if err != nil {
-		panic(err)
-	}
-
-	log.Println(billings.Data)
+	log.Printf("billing created: %s\n", createResp.Data.PublicID)
 }
 ```
 
-## Documentation
+# Configuration
+| Field	 | Description | Required |
+|---------|------------|---------------------|
+| APIKey  |	Your AbacatePay API key | yes |
+| BaseURL |	Custom API base URL (optional) | no |
+| Timeout |	Default HTTP timeout| no |
 
-[https://abacatepay.readme.io](https://abacatepay.readme.io)
+The SDK also supports configuring the API base URL via environment variable:
 
-## License
+```bash
+export ABACATEPAY_API_URL=https://api.abacatepay.com
+```
 
-MIT
+### Context & timeouts
+
+All requests require a context.Context.
+This allows request cancellation, deadlines and better control in production environments.
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+defer cancel()
+```
+
+## API Reference
+
+Full API documentation is available at:
+
+https://docs.abacatepay.com/
+

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -14,32 +13,21 @@ import (
 	"github.com/AbacatePay/abacatepay-go-sdk/v1/billing"
 )
 
-func TestNew(t *testing.T) {
-	t.Run("Create new client with valid params", func(t *testing.T) {
-		client := billing.New(nil)
-		assert.NotNil(t, client)
-	})
+func TestNewBilling(t *testing.T) {
+	client := billing.New(nil)
+	assert.NotNil(t, client)
 }
 
-func TestCreate(t *testing.T) {
-	t.Run("Should validate body", func(t *testing.T) {
-		client := billing.New(nil)
+func TestCreateBilling(t *testing.T) {
+	t.Run("invalid body validation", func(t *testing.T) {
+		b := billing.New(nil)
 
-		body := &billing.CreateBillingBody{
-			Frequency:     billing.OneTime,
-			Methods:       []billing.Method{billing.PIX},
-			CompletionUrl: "https://example.com/completion",
-		}
-
-		ctx := context.Background()
-
-		response, err := client.Create(ctx, body)
-
+		resp, err := b.Create(context.Background(), &billing.CreateBillingBody{})
 		assert.Error(t, err)
-		assert.Nil(t, response)
+		assert.Nil(t, resp)
 	})
 
-	t.Run("Should create new billing", func(t *testing.T) {
+	t.Run("create billing successfully", func(t *testing.T) {
 		body := &billing.CreateBillingBody{
 			Frequency:     billing.OneTime,
 			Methods:       []billing.Method{billing.PIX},
@@ -47,94 +35,67 @@ func TestCreate(t *testing.T) {
 			ReturnUrl:     "https://example.com/return",
 			Products: []*billing.BillingProduct{
 				{
-					ExternalId:  "pix-1234",
-					Name:        "PIX",
-					Description: "PIX",
-					Quantity:    1,
-					Price:       100,
+					ExternalId: "pix-1",
+					Name:       "PIX",
+					Quantity:   1,
+					Price:      100,
 				},
 			},
 		}
 
 		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			var bodyRef billing.CreateBillingBody
-
-			assert.Equal(t, http.MethodPost, r.Method)
-			assert.Equal(t, "Bearer test-key", r.Header.Get("Authorization"))
-			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 			assert.Equal(t, "/v1/billing/create", r.URL.Path)
+			assert.Equal(t, http.MethodPost, r.Method)
 
-			defer r.Body.Close()
+			var received billing.CreateBillingBody
+			json.NewDecoder(r.Body).Decode(&received)
 
-			json.NewDecoder(r.Body).Decode(&bodyRef)
+			assert.Equal(t, *body, received)
 
-			assert.Equal(t, *body, bodyRef)
-
-			resp := billing.CreateBillingResponse{
+			json.NewEncoder(w).Encode(billing.CreateBillingResponse{
 				Data: billing.CreateBillingResponseItem{
-					PublicID: "pix-1234",
-					Products: []billing.ProductItem{},
+					PublicID: "pix-1",
 				},
-			}
-
-			json.NewEncoder(w).Encode(resp)
+			})
 		}))
+		defer server.Close()
 
-		client, err := fetch.New("test-key", server.URL, "1.0.0", 10*time.Second)
-		assert.NoError(t, err)
+		client, _ := fetch.New(fetch.Config{
+			APIKey:  "test-key",
+			BaseURL: server.URL,
+			Version: "1.0.0",
+		})
 
 		b := billing.New(client)
 
-		ctx := context.Background()
-
-		response, err := b.Create(ctx, body)
-
+		resp, err := b.Create(context.Background(), body)
 		assert.NoError(t, err)
-		assert.NotNil(t, response.Data)
+		assert.Equal(t, "pix-1", resp.Data.PublicID)
 	})
 }
 
-func TestListAll(t *testing.T) {
-	t.Run("Should list all billings", func(t *testing.T) {
-		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodGet, r.Method)
-			assert.Equal(t, "Bearer test-key", r.Header.Get("Authorization"))
-			assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
-			assert.Equal(t, "/v1/billing/list", r.URL.Path)
+func TestListAllBillings(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v1/billing/list", r.URL.Path)
+		assert.Equal(t, http.MethodGet, r.Method)
 
-			resp := billing.ListBillingResponse{
-				Data: []billing.BillingListItem{
-					{
-						ID:        "pix-1234",
-						Metadata:  billing.Metadata{},
-						PublicID:  "pix-1234",
-						Amount:    0,
-						Status:    "",
-						DevMode:   false,
-						Methods:   []billing.Method{},
-						Frequency: "",
-						CreatedAt: time.Now(),
-						UpdatedAt: time.Now(),
-						Version:   0,
-						URL:       "",
-						Products:  []billing.ProductItem{},
-					},
-				},
-			}
+		json.NewEncoder(w).Encode(billing.ListBillingResponse{
+			Data: []billing.BillingListItem{
+				{PublicID: "pix-1"},
+			},
+		})
+	}))
+	defer server.Close()
 
-			json.NewEncoder(w).Encode(resp)
-		}))
-
-		client, err := fetch.New("test-key", server.URL, "1.0.0", 10*time.Second)
-		assert.NoError(t, err)
-
-		b := billing.New(client)
-
-		ctx := context.Background()
-
-		response, err := b.ListAll(ctx)
-
-		assert.NoError(t, err)
-		assert.NotNil(t, response.Data)
+	client, _ := fetch.New(fetch.Config{
+		APIKey:  "test-key",
+		BaseURL: server.URL,
+		Version: "1.0.0",
 	})
+
+	b := billing.New(client)
+
+	resp, err := b.ListAll(context.Background())
+	assert.NoError(t, err)
+	assert.Len(t, resp.Data, 1)
 }
