@@ -16,27 +16,6 @@ var (
 	ErrInvalidURL    = errors.New("fetch: base url is required")
 )
 
-type Config struct {
-	APIKey  string
-	BaseURL string
-	Version string
-	Timeout time.Duration
-}
-
-type Fetch struct {
-	apiKey  string
-	baseURL string
-	version string
-	client  *http.Client
-}
-
-type RequestOption func(*requestConfig)
-
-type requestConfig struct {
-	timeout time.Duration
-	headers map[string]string
-}
-
 func New(cfg Config) (*Fetch, error) {
 	if cfg.APIKey == "" {
 		return nil, ErrInvalidAPIKey
