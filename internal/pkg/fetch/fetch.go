@@ -26,7 +26,7 @@ func New(cfg Config) (*Fetch, error) {
 	}
 
 	timeout := cfg.Timeout
-	
+
 	if timeout <= 0 {
 		timeout = 5 * time.Second
 	}
@@ -62,29 +62,29 @@ func (f *Fetch) Request(
 	body any,
 	opts ...RequestOption,
 ) (*http.Response, error) {
-	url := f.baseURL + "v" + f.version + endpoint
+	url := f.baseURL + "/v" + f.version + endpoint
 
 	var reader io.Reader
 
 	if body != nil {
 		b, err := json.Marshal(body)
-	
+
 		if err != nil {
 			return nil, fmt.Errorf("fetch: serialize body: %w", err)
 		}
-	
+
 		reader = bytes.NewReader(b)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, url, reader)
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("fetch: create request: %w", err)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+f.apiKey)
-	req.Header.Set("User-Agent", "AbacatePay-Go-SDK/"+f.version)
+	req.Header.Set("User-Agent", "AbacatePay-Go/"+f.version)
 
 	cfg := requestConfig{
 		headers: make(map[string]string),
@@ -94,10 +94,6 @@ func (f *Fetch) Request(
 		opt(&cfg)
 	}
 
-	if cfg.timeout > 0 {
-		f.client.Timeout = cfg.timeout
-	}
-
 	for k, v := range cfg.headers {
 		req.Header.Set(k, v)
 	}
@@ -105,42 +101,91 @@ func (f *Fetch) Request(
 	return f.client.Do(req)
 }
 
-func (f *Fetch) Get(ctx context.Context, endpoint string, opts ...RequestOption) (*http.Response, error) {
-	return f.Request(ctx, http.MethodGet, endpoint, nil, opts...)
-}
-
-func (f *Fetch) Post(ctx context.Context, endpoint string, body any, opts ...RequestOption) (*http.Response, error) {
-	return f.Request(ctx, http.MethodPost, endpoint, body, opts...)
-}
-
-func (f *Fetch) Put(ctx context.Context, endpoint string, body any, opts ...RequestOption) (*http.Response, error) {
-	return f.Request(ctx, http.MethodPut, endpoint, body, opts...)
-}
-
-func (f *Fetch) Delete(ctx context.Context, endpoint string, opts ...RequestOption) (*http.Response, error) {
-	return f.Request(ctx, http.MethodDelete, endpoint, nil, opts...)
-}
-
-func ParseResponse[T any](resp *http.Response) (*T, error) {
+func decode(resp *http.Response, out any) error {
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
-	
+
 	if err != nil {
-		return nil, fmt.Errorf("fetch: read response: %w", err)
+		return fmt.Errorf("fetch: read response: %w", err)
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return nil, fmt.Errorf("fetch: http %d: %s", resp.StatusCode, body)
-	}
-
-	var out T
-	
-	if len(body) > 0 {
-		if err := json.Unmarshal(body, &out); err != nil {
-			return nil, fmt.Errorf("fetch: deserialize response: %w", err)
+		return &HTTPError{
+			StatusCode: resp.StatusCode,
+			Body:       body,
 		}
 	}
 
-	return &out, nil
+	if out == nil || len(body) == 0 {
+		return nil
+	}
+
+	if err := json.Unmarshal(body, out); err != nil {
+		return fmt.Errorf("fetch: deserialize response: %w", err)
+	}
+
+	return nil
+}
+
+func (f *Fetch) Get(
+	ctx context.Context,
+	endpoint string,
+	out any,
+	opts ...RequestOption,
+) error {
+	resp, err := f.Request(ctx, http.MethodGet, endpoint, nil, opts...)
+
+	if err != nil {
+		return err
+	}
+
+	return decode(resp, out)
+}
+
+func (f *Fetch) Post(
+	ctx context.Context,
+	endpoint string,
+	body any,
+	out any,
+	opts ...RequestOption,
+) error {
+	resp, err := f.Request(ctx, http.MethodPost, endpoint, body, opts...)
+
+	if err != nil {
+		return err
+	}
+
+	return decode(resp, out)
+}
+
+func (f *Fetch) Put(
+	ctx context.Context,
+	endpoint string,
+	body any,
+	out any,
+	opts ...RequestOption,
+) error {
+	resp, err := f.Request(ctx, http.MethodPut, endpoint, body, opts...)
+
+	if err != nil {
+		return err
+	}
+
+	return decode(resp, out)
+}
+
+func (f *Fetch) Delete(
+	ctx context.Context,
+	endpoint string,
+	out any,
+	opts ...RequestOption,
+) error {
+	resp, err := f.Request(ctx, http.MethodDelete, endpoint, nil, opts...)
+
+	if err != nil {
+		return err
+	}
+
+	return decode(resp, out)
 }
