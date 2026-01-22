@@ -8,6 +8,7 @@ import (
 	"github.com/AbacatePay/abacatepay-go-sdk/internal/pkg/fetch"
 	"github.com/AbacatePay/abacatepay-go-sdk/v1/coupons"
 	"github.com/AbacatePay/abacatepay-go-sdk/v1/customers"
+	"github.com/AbacatePay/abacatepay-go-sdk/v1/store"
 )
 
 const Version = "1"
@@ -25,6 +26,7 @@ type ClientConfig struct {
 type Client struct {
 	http *fetch.Fetch
 
+	Store     *store.Stores
 	Coupons   *coupons.Coupons
 	Customers *customers.Customers
 }
@@ -59,6 +61,7 @@ func New(cfg ClientConfig) (*Client, error) {
 
 	return &Client{
 		http:      http,
+		Store:     store.New(http),
 		Coupons:   coupons.New(http),
 		Customers: customers.New(http),
 	}, nil
