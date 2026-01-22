@@ -6,8 +6,8 @@ import (
 	v1 "github.com/almeidazs/go-abacate-types/v1"
 )
 
-func (s *Stores) Get(ctx context.Context) (*Store, error) {
-	var store Store
+func (s *Stores) Get(ctx context.Context) (*GetStoreData, error) {
+	var store GetStoreData
 
 	if err := s.http.Get(ctx, v1.RouteStoreDetails, &store); err != nil {
 		return nil, err

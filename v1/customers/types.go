@@ -1,9 +1,11 @@
 package customers
 
-import types "github.com/almeidazs/go-abacate-types/v1"
+import v1 "github.com/almeidazs/go-abacate-types/v1"
 
-type Customer = types.APICustomer
+type Customer = v1.APICustomer
 
-type CreateCustomerBody = types.RESTPostCreateCustomerBody
+type CreateCustomerBody = v1.RESTPostCreateCustomerBody
 
-type ListCustomersData = []Customer
+type CreateCustomerData = v1.RESTPostCreateCustomerData
+
+type ListCustomersData = v1.RESTGetListCustomersData

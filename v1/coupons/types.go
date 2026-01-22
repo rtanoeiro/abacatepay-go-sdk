@@ -6,4 +6,6 @@ type Coupon = v1.APICoupon
 
 type CreateCouponBody = v1.RESTPostCreateCouponBody
 
-type ListCouponsData = []v1.APICoupon
+type CreateCouponData = v1.RESTPostCreateCouponData
+
+type ListCouponsData = v1.RESTGetListCouponsData
