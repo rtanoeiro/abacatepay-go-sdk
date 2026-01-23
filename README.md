@@ -1,27 +1,42 @@
-# abacatepay-go-sdk
+<div align="center">
 
-Official Go SDK for the AbacatePay API.
+# AbacatePay Go SDK 🥑
 
----
+SDK oficial da *[AbacatePay](https://abacatepay.com/)* para integração com a API em **Golang**, de forma simples, segura e totalmente tipada.
 
-## Installation
+Desenvolvido com foco em **simplicidade**, **segurança**, **controle de contexto** e **boas práticas idiomáticas de Go**.
+
+Wrapper oficial, tipado e mantido pela equipe *Open Source da AbacatePay*.
+
+<img src="https://res.cloudinary.com/dkok1obj5/image/upload/v1767631413/avo_clhmaf.png" width="100%" alt="AbacatePay Open Source"/>
+
+Você pode ver documentação completa do SDK [aqui](https://docs.abacatepay.com/pages/sdks/golang).
+
+## Instalação
+
+Instale facilmente com o *go get* nativo do Golang
+
+</div>
 
 ```bash
-go get github.com/AbacatePay/abacatepay-go-sdk
+go get github.com/AbacatePay/abacatepay-go-sdk/v1
 ```
 
-## Quick start
+<div align="center">
+
+## Uso básico
+</div>
 
 ```go
 package main
 
 import (
 	"context"
-	"log"
 	"time"
+	"log"
 
-	"github.com/AbacatePay/abacatepay-go-sdk/abacatepay"
-	"github.com/AbacatePay/abacatepay-go-sdk/v1/billing"
+	"github.com/AbacatePay/abacatepay-go-sdk/v1"
+	"github.com/AbacatePay/abacatepay-go-sdk/v1/pix"
 )
 
 func main() {
@@ -34,66 +49,80 @@ func main() {
 		log.Fatal(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 15 * time.Second)
 
 	defer cancel()
 
-	// Create a new billing
-	body := &billing.CreateBillingBody{
-		Frequency:     billing.OneTime,
-		Methods:       []billing.Method{billing.PIX},
-		CompletionUrl: "https://example.com/completion",
-		ReturnUrl:     "https://example.com/return",
-		Products: []*billing.BillingProduct{
-			{
-				ExternalId:  "pix-1234",
-				Name:        "Example Product",
-				Description: "Example product description",
-				Quantity:    1,
-				Price:       100,
-			},
-		},
-		Customer: &billing.BillingCustomer{
-			Email: "test@example.com",
-		},
+	body := &coupons.CreateQrCodePIXBody{
+		Amount: 100,
 	}
 
-	createResp, err := client.Billing.Create(ctx, body)
-
+	resp, err := client.Pix.Create(ctx, body)
+	
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("billing created: %s\n", createResp.Data.PublicID)
+	log.Printf("PIX criado: %s\n", resp.Data.ID)
 }
 ```
 
-# Configuration
-| Field	 | Description | Required |
-|---------|------------|---------------------|
-| APIKey  |	Your AbacatePay API key | yes |
-| BaseURL |	Custom API base URL (optional) | no |
-| Timeout |	Default HTTP timeout| no |
+<div align="center">
 
-The SDK also supports configuring the API base URL via environment variable:
+## Contexto & Timeouts
 
-```bash
-export ABACATEPAY_API_URL=https://api.abacatepay.com
-```
+Todas as requisições exigem context.Context.
 
-### Context & timeouts
+Isso garante:
 
-All requests require a context.Context.
-This allows request cancellation, deadlines and better control in production environments.
+</div>
+
+- Cancelamento seguro.
+- Timeouts explícitos
+- Melhor controle em produção
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+
 defer cancel()
 ```
 
-## API Reference
+<div align="center">
 
-Full API documentation is available at:
+## Estrutura do SDK
+</div>
 
-https://docs.abacatepay.com/
+- Cada domínio da API fica em seu próprio pacote (billing, customers, etc).
+- Cliente HTTP compartilhado.
+- Sem estado global.
+- Compatível com aplicações concorrentes.
 
+```go
+client.Billing.Get(...)
+client.Billing.Create(...)
+```
+
+<div align="center">
+
+## Tratamento de erros
+</div>
+
+- Erros de configuração retornam imediatamente.
+- Erros HTTP são propagados de forma explícita.
+- Nenhum panic inesperado.
+
+```go
+resp, err := client.Billing.Create(ctx, body)
+
+if err != nil {
+	// Trate erro da API ou de rede aqui
+	log.Fatal(err)
+}
+```
+
+<div align="center">
+
+Feito com 🥑 pela equipe AbacatePay<br/>
+Open source, de verdade.
+
+</div>
