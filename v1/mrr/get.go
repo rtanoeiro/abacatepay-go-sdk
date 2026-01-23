@@ -3,7 +3,7 @@ package mrr
 import (
 	"context"
 
-	v1 "github.com/almeidazs/go-abacate-types/v1"
+	v1 "github.com/AbacatePay/go-types/v1"
 )
 
 func (m *MRRs) Get(ctx context.Context) (*MRR, error) {

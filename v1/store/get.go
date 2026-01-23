@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	v1 "github.com/almeidazs/go-abacate-types/v1"
+	v1 "github.com/AbacatePay/go-types/v1"
 )
 
 func (s *Stores) Get(ctx context.Context) (*GetStoreData, error) {

@@ -1,6 +1,6 @@
 package coupons
 
-import v1 "github.com/almeidazs/go-abacate-types/v1"
+import v1 "github.com/AbacatePay/go-types/v1"
 
 type Coupon = v1.APICoupon
 

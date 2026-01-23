@@ -3,7 +3,7 @@ package customers
 import (
 	"context"
 
-	types "github.com/almeidazs/go-abacate-types/v1"
+	types "github.com/AbacatePay/go-types/v1"
 )
 
 func (c *Customers) List(ctx context.Context) (*ListCustomersData, error) {
