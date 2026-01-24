@@ -13,6 +13,7 @@ import (
 	"github.com/AbacatePay/abacatepay-go-sdk/v2/products"
 	"github.com/AbacatePay/abacatepay-go-sdk/v2/store"
 	"github.com/AbacatePay/abacatepay-go-sdk/v2/subscriptions"
+	"github.com/AbacatePay/abacatepay-go-sdk/v2/transparents"
 )
 
 const Version = "2"
@@ -36,6 +37,7 @@ type Client struct {
 	Products      *products.Products
 	Checkouts     *checkouts.Checkouts
 	Customers     *customers.Customers
+	Transparents  *transparents.Transparents
 	Subscriptions *subscriptions.Subscriptions
 }
 
@@ -75,6 +77,7 @@ func New(cfg ClientConfig) (*Client, error) {
 		Products:      products.New(httpClient),
 		Checkouts:     checkouts.New(httpClient),
 		Customers:     customers.New(httpClient),
+		Transparents:  transparents.New(httpClient),
 		Subscriptions: subscriptions.New(httpClient),
 	}, nil
 }
