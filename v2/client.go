@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/AbacatePay/abacatepay-go-sdk/internal/pkg/fetch"
-	"github.com/AbacatePay/abacatepay-go-sdk/v1/store"
+	"github.com/AbacatePay/abacatepay-go-sdk/v2/store"
 	"github.com/AbacatePay/abacatepay-go-sdk/v2/mrr"
 )
 
