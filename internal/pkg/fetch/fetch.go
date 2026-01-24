@@ -175,6 +175,22 @@ func (f *Fetch) Put(
 	return decode(resp, out)
 }
 
+func (f *Fetch) Patch(
+	ctx context.Context,
+	endpoint string,
+	body any,
+	out any,
+	opts ...RequestOption,
+) error {
+	resp, err := f.Request(ctx, http.MethodPatch, endpoint, body, opts...)
+
+	if err != nil {
+		return err
+	}
+
+	return decode(resp, out)
+}
+
 func (f *Fetch) Delete(
 	ctx context.Context,
 	endpoint string,

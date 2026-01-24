@@ -7,6 +7,7 @@ import (
 
 	"github.com/AbacatePay/abacatepay-go-sdk/internal/pkg/fetch"
 	"github.com/AbacatePay/abacatepay-go-sdk/v2/checkouts"
+	"github.com/AbacatePay/abacatepay-go-sdk/v2/coupons"
 	"github.com/AbacatePay/abacatepay-go-sdk/v2/customers"
 	"github.com/AbacatePay/abacatepay-go-sdk/v2/mrr"
 	"github.com/AbacatePay/abacatepay-go-sdk/v2/payouts"
@@ -33,6 +34,7 @@ type Client struct {
 
 	MRRs          *mrr.MRRs
 	Store         *store.Stores
+	Coupons       *coupons.Coupons
 	Payouts       *payouts.Payouts
 	Products      *products.Products
 	Checkouts     *checkouts.Checkouts
@@ -73,6 +75,7 @@ func New(cfg ClientConfig) (*Client, error) {
 		http:          httpClient,
 		MRRs:          mrr.New(httpClient),
 		Store:         store.New(httpClient),
+		Coupons:       coupons.New(httpClient),
 		Payouts:       payouts.New(httpClient),
 		Products:      products.New(httpClient),
 		Checkouts:     checkouts.New(httpClient),
