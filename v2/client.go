@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/AbacatePay/abacatepay-go-sdk/internal/pkg/fetch"
+	"github.com/AbacatePay/abacatepay-go-sdk/v2/checkouts"
 	"github.com/AbacatePay/abacatepay-go-sdk/v2/mrr"
 	"github.com/AbacatePay/abacatepay-go-sdk/v2/payouts"
 	"github.com/AbacatePay/abacatepay-go-sdk/v2/products"
@@ -32,6 +33,7 @@ type Client struct {
 	Store         *store.Stores
 	Payouts       *payouts.Payouts
 	Products      *products.Products
+	Checkouts     *checkouts.Checkouts
 	Subscriptions *subscriptions.Subscriptions
 }
 
@@ -69,6 +71,7 @@ func New(cfg ClientConfig) (*Client, error) {
 		Store:         store.New(httpClient),
 		Payouts:       payouts.New(httpClient),
 		Products:      products.New(httpClient),
+		Checkouts:     checkouts.New(httpClient),
 		Subscriptions: subscriptions.New(httpClient),
 	}, nil
 }
