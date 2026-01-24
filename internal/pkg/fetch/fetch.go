@@ -178,10 +178,11 @@ func (f *Fetch) Put(
 func (f *Fetch) Delete(
 	ctx context.Context,
 	endpoint string,
+	body any,
 	out any,
 	opts ...RequestOption,
 ) error {
-	resp, err := f.Request(ctx, http.MethodDelete, endpoint, nil, opts...)
+	resp, err := f.Request(ctx, http.MethodDelete, endpoint, body, opts...)
 
 	if err != nil {
 		return err
