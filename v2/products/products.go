@@ -2,10 +2,10 @@ package products
 
 import "github.com/AbacatePay/abacatepay-go-sdk/internal/pkg/fetch"
 
-type Products struct {
+type ProductManager struct {
 	http *fetch.Fetch
 }
 
-func New(http *fetch.Fetch) *Products {
-	return &Products{http}
+func New(http *fetch.Fetch) *ProductManager {
+	return &ProductManager{http}
 }

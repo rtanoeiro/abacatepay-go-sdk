@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-func (p *Products) Delete(ctx context.Context, id string) (*DeleteProductData, error) {
+func (p *ProductManager) Delete(ctx context.Context, id string) (*DeleteProductData, error) {
 	var data DeleteProductData
 
 	// TODO: Add this in go-types

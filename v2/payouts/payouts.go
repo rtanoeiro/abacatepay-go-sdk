@@ -2,10 +2,10 @@ package payouts
 
 import "github.com/AbacatePay/abacatepay-go-sdk/internal/pkg/fetch"
 
-type Payouts struct {
+type PayoutManager struct {
 	http *fetch.Fetch
 }
 
-func New(http *fetch.Fetch) *Payouts {
-	return &Payouts{http}
+func New(http *fetch.Fetch) *PayoutManager {
+	return &PayoutManager{http}
 }

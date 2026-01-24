@@ -6,7 +6,7 @@ import (
 	v2 "github.com/AbacatePay/go-types/v2"
 )
 
-func (s *Stores) Get(ctx context.Context) (*GetStoreData, error) {
+func (s *StoreManager) Get(ctx context.Context) (*GetStoreData, error) {
 	var data GetStoreData
 
 	if err := s.http.Get(ctx, v2.RouteStoreDetails, &data); err != nil {

@@ -32,15 +32,15 @@ type ClientConfig struct {
 type Client struct {
 	http *fetch.Fetch
 
-	MRRs          *mrr.MRRs
-	Store         *store.Stores
-	Coupons       *coupons.Coupons
-	Payouts       *payouts.Payouts
-	Products      *products.Products
-	Checkouts     *checkouts.Checkouts
-	Customers     *customers.Customers
-	Transparents  *transparents.Transparents
-	Subscriptions *subscriptions.Subscriptions
+	MRRs          *mrr.MRRManager
+	Store         *store.StoreManager
+	Coupons       *coupons.CouponManager
+	Payouts       *payouts.PayoutManager
+	Products      *products.ProductManager
+	Checkouts     *checkouts.CheckoutManager
+	Customers     *customers.CustomerManager
+	Transparents  *transparents.TransparentManager
+	Subscriptions *subscriptions.SubscriptionManager
 }
 
 func New(cfg ClientConfig) (*Client, error) {

@@ -2,10 +2,10 @@ package checkouts
 
 import "github.com/AbacatePay/abacatepay-go-sdk/internal/pkg/fetch"
 
-type Checkouts struct {
+type CheckoutManager struct {
 	http *fetch.Fetch
 }
 
-func New(http *fetch.Fetch) *Checkouts {
-	return &Checkouts{http}
+func New(http *fetch.Fetch) *CheckoutManager {
+	return &CheckoutManager{http}
 }
