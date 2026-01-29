@@ -53,7 +53,7 @@ func main() {
 
 	defer cancel()
 
-	body := &coupons.CreateQrCodePIXBody{
+	body := &pix.CreateQrCodePIXBody{
 		Amount: 100,
 	}
 
